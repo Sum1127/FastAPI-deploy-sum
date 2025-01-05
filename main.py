@@ -1,5 +1,4 @@
 import datetime
-import os
 from typing import Union
 from uuid import UUID
 
@@ -20,19 +19,12 @@ from database.usermemo import (
     read_select_memo,
     read_timeselect_memo,
 )
-from dotenv import load_dotenv
 from fastapi import Body, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from model.Article import ArticleSchema
 from model.Memomodel import UserMemo, UserMemoSchema
 from sqlalchemy.orm import Session
-
-load_dotenv()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
 
 app = FastAPI()
 
@@ -165,14 +157,3 @@ async def delete_usermemo(
     user_id: UUID = Depends(get_auth_user_id),
 ) -> None:
     destroy_memo(db,user_id,id)
-
-#async def create_article(article: Article):
-#    response = supabase.table("articles").insert({
- #       "title": article.title,
- #       "content": article.content,
-  #      "tags": article.tags,
-   # }).execute()
-#
- #   if response.get("status_code") == 201:
-  #      return {"message": "記事が保存されました。"}
-   # raise HTTPException(status_code=500, detail="記事の保存に失敗しました。")
