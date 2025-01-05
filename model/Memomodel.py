@@ -1,9 +1,10 @@
+import datetime
 import uuid
 
+from model.Article import Base, get_jst_now
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import UUID, Column, Integer,Text,DateTime
+from sqlalchemy import UUID, Column, DateTime, Integer, Text
 
-from model.Article import Base,get_jst_now
 
 class UserMemo(Base):
     __tablename__="usermemo"
@@ -22,8 +23,7 @@ class UserMemoSchema(BaseModel):
     id:int
     title:str
     content:str
+    created_at:datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
 

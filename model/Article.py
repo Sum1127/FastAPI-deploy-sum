@@ -1,11 +1,14 @@
-from pydantic import BaseModel,ConfigDict
+from datetime import datetime
 from typing import List
-from sqlalchemy import  Column,Integer,DateTime,Text,ARRAY
+
+import pytz
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy import ARRAY, Column, DateTime, Integer, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped
-from datetime import datetime, timedelta
+
 
 def get_jst_now():
-    return datetime.utcnow() + timedelta(hours=9)
+    return datetime.now(pytz.timezone('Asia/Tokyo'))
 
 class Base(DeclarativeBase):
     pass
@@ -18,11 +21,17 @@ class Article(Base):
     content: Mapped[str] = Column(Text, nullable=False)
     tags: List[str]=Column(ARRAY(Text), nullable=False)  # タグは文字列のリスト
     created_at: Mapped[datetime] = Column(DateTime, default=get_jst_now)
+    user_name: Mapped[str] = Column(Text, nullable=True)
+    user_avatar: Mapped[str] = Column(Text, nullable=True)
+    user_email:Mapped[str]=Column(Text,nullable=True)
 
 class ArticleSchema(BaseModel):
     id:int
     title:str
     content:str
     tags:List[str]
+    user_name:str
+    user_avatar:str
+    user_email:str
 
     model_config = ConfigDict(from_attributes=True)

@@ -1,16 +1,32 @@
+import datetime
+import os
 from typing import Union
-from fastapi import FastAPI,HTTPException,Body,Depends
+from uuid import UUID
+
+import database.supabase_client
+from database.article import (
+    add_articles,
+    read_research_article,
+    read_select_article,
+    research_articles,
+)
+from database.usermemo import (
+    create_memo,
+    destroy_memo,
+    edit_usermemo,
+    read_id_usermemo,
+    read_memo,
+    read_memo_dates,
+    read_select_memo,
+    read_timeselect_memo,
+)
+from dotenv import load_dotenv
+from fastapi import Body, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from uuid import UUID
+from model.Article import ArticleSchema
+from model.Memomodel import UserMemo, UserMemoSchema
 from sqlalchemy.orm import Session
-from model.Article import Article,ArticleSchema
-from model.Memomodel import UserMemo,UserMemoSchema
-import os
-from dotenv import load_dotenv
-import database.supabase_client 
-from database.article import research_articles,add_articles,read_select_article,read_research_article
-from database.usermemo import read_memo,create_memo,destroy_memo,read_select_memo
 
 load_dotenv()
 
@@ -46,6 +62,7 @@ async def root():
 
 @app.get("/articles")
 async def get_articles(
+    id:Union[int,None]=None,
     title: Union[str,None] = None,
     db: Session = Depends(get_db),
 ):
@@ -53,6 +70,10 @@ async def get_articles(
         search_articles=read_research_article(db,title)
         return search_articles
     
+    elif id is not None: 
+        id_articles=read_select_article(db,id)
+        return id_articles
+
     articles=research_articles(db)
     return articles
 
@@ -68,6 +89,7 @@ def get_select_article(
 @app.get("/usermemo")
 async def get_usermemo(
     title: Union[str,None] = None,
+    created_at:Union[datetime.datetime,None]=None,
     db:Session=Depends(get_db),
     user_id: UUID = Depends(get_auth_user_id),
 )->list[UserMemoSchema]:
@@ -75,17 +97,54 @@ async def get_usermemo(
         search_memo_list=read_select_memo(db,user_id,title)
         return search_memo_list
     
+    elif created_at is not None:
+        searchtime_memo_list=read_timeselect_memo(db,user_id,created_at)
+        return searchtime_memo_list
+    
     memo_list=read_memo(db, user_id)
     return [UserMemoSchema.model_validate(i) for i in memo_list]
+
+@app.get("/usermemo/{id}")
+async def get_idmemo(
+    id:int,
+    db:Session=Depends(get_db),
+    user_id: UUID = Depends(get_auth_user_id),
+):
+    select_usermemo=read_id_usermemo(db,user_id,id)
+    return select_usermemo
+
+
+@app.get("/usermemo_dates")
+async def get_usermemo_dates(
+    db:Session=Depends(get_db),
+    user_id: UUID = Depends(get_auth_user_id),
+)->list[datetime.datetime]:
+    memo_dates=read_memo_dates(db,user_id)
+    return memo_dates
+
+@app.put("/usermemo/{id}")
+async def put_usermemo(
+    id:int,
+    title:str=Body(...),
+    content:str=Body(...),
+    db:Session=Depends(get_db),
+    user_id: UUID = Depends(get_auth_user_id),
+)->UserMemoSchema:
+    f=edit_usermemo(id,title,content,db,user_id)
+    return UserMemoSchema.model_validate(f)
+
 
 @app.post("/createarticles")
 async def post_articles(
     title:str=Body(...),
     content:str=Body(...),
     tags:list[str]=Body([...]),
+    user_name:str=Body(...),
+    user_avatar:str=Body(...),
+    user_email:str=Body(...),
     db: Session = Depends(get_db),
 )->ArticleSchema:
-    f=add_articles(db,title,content,tags)
+    f=add_articles(db,title,content,tags,user_name,user_avatar,user_email)
     return ArticleSchema.model_validate(f)
 
 @app.post("/usermemo")
