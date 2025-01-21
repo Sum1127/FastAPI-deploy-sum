@@ -3,8 +3,9 @@ from typing import List
 
 import pytz
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ARRAY, Column, DateTime, Integer, Text
+from sqlalchemy import UUID, Column, DateTime, Integer, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped
+from sqlalchemy.dialects.postgresql import ARRAY
 
 
 def get_jst_now():
@@ -24,6 +25,14 @@ class Article(Base):
     user_name: Mapped[str] = Column(Text, nullable=True)
     user_avatar: Mapped[str] = Column(Text, nullable=True)
     user_email:Mapped[str]=Column(Text,nullable=True)
+    user_id:Mapped[str]=Column(UUID,nullable=False, index=True)
+
+    # def __init__ (self,title:str,content:str,tags:list,user_id:uuid.UUID):
+    #     self.title=title
+    #     self.content=content
+    #     self.tags=tags
+    #     self.user_id=user_id
+
 
 class ArticleSchema(BaseModel):
     id:int
